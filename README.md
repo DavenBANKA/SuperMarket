@@ -105,7 +105,3 @@ Pour contribuer au projet :
 ## Support
 Pour toute question ou problème, consultez les logs de l'application ou vérifiez que toutes les dépendances sont correctement installées.
 
----
-**Version** : 1.0  
-**Auteur** : Développé avec Cascade AI  
-**Licence** : Usage libre pour projets éducatifs et commerciaux
