@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion du Stock - GbGescom{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-warehouse text-warning"></i> 
+            Gestion du Stock
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                <h5 class="card-title">Produits en Rupture</h5>
+                <h2 class="text-danger">{{ produits_faible_stock|length }}</h2>
+                <p class="card-text">Produits nécessitant un réapprovisionnement</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-boxes fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Mouvements du Jour</h5>
+                <h2 class="text-info">0</h2>
+                <p class="card-text">Entrées et sorties de stock</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Valeur Stock</h5>
+                <h2 class="text-success">0 XOF</h2>
+                <p class="card-text">Valeur totale du stock</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exclamation-triangle"></i> Alertes Stock - Produits en Rupture</h5>
+            </div>
+            <div class="card-body">
+                {% if produits_faible_stock %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Désignation</th>
+                                <th>Stock Actuel</th>
+                                <th>Stock Minimal</th>
+                                <th>Famille</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produit in produits_faible_stock %}
+                            <tr class="table-warning">
+                                <td><strong>{{ produit.code }}</strong></td>
+                                <td>{{ produit.designation }}</td>
+                                <td class="text-danger"><strong>{{ produit.stock_affiche }}</strong></td>
+                                <td>{{ produit.stock_minimal }}</td>
+                                <td>
+                                    {% if produit.famille %}
+                                        <span class="badge bg-info">{{ produit.famille }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" onclick="ouvrirModalReappro('{{ produit.code }}', '{{ produit.designation }}')">
+                                        <i class="fas fa-plus"></i> Réapprovisionner
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-success py-4">
+                    <i class="fas fa-check-circle fa-3x mb-3"></i>
+                    <h5>Aucune alerte stock</h5>
+                    <p>Tous les produits ont un stock suffisant</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Mouvement de Stock</h5>
+            </div>
+            <div class="card-body">
+                <form id="mouvementForm">
+                    <div class="mb-3">
+                        <label class="form-label">Code Produit</label>
+                        <input type="text" class="form-control" id="codeProduitMvt" placeholder="Code produit">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Type de Mouvement</label>
+                        <select class="form-select" id="typeMouvement">
+                            <option value="entree">Entrée (Réception)</option>
+                            <option value="sortie">Sortie (Vente)</option>
+                            <option value="ajustement">Ajustement</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Quantité</label>
+                        <input type="number" class="form-control" id="quantiteMvt" min="1" value="1">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Motif</label>
+                        <textarea class="form-control" id="motifMvt" rows="2" placeholder="Motif du mouvement"></textarea>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary w-100" onclick="enregistrerMouvement()">
+                        <i class="fas fa-save"></i> Enregistrer
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Derniers Mouvements</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between">
+                        <div>
+                            <strong>AMP01</strong><br>
+                            <small class="text-muted">Entrée +50</small>
+                        </div>
+                        <small class="text-muted">Aujourd'hui</small>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between">
+                        <div>
+                            <strong>CAB01</strong><br>
+                            <small class="text-muted">Sortie -10</small>
+                        </div>
+                        <small class="text-muted">Hier</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Réapprovisionnement -->
+<div class="modal fade" id="reapproModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Réapprovisionnement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reapproForm">
+                    <div class="mb-3">
+                        <label class="form-label">Produit</label>
+                        <input type="text" class="form-control" id="produitReappro" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Quantité à commander</label>
+                        <input type="number" class="form-control" id="quantiteReappro" min="1" value="100">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Fournisseur</label>
+                        <select class="form-select" id="fournisseurReappro">
+                            <option value="">Sélectionner un fournisseur</option>
+                            <option value="fournisseur1">Fournisseur 1</option>
+                            <option value="fournisseur2">Fournisseur 2</option>
+                            <option value="fournisseur3">Fournisseur 3</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="notesReappro" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="confirmerReappro()">
+                    <i class="fas fa-check"></i> Créer Commande
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function ouvrirModalReappro(code, designation) {
+    document.getElementById('produitReappro').value = `${code} - ${designation}`;
+    new bootstrap.Modal(document.getElementById('reapproModal')).show();
+}
+
+function confirmerReappro() {
+    const quantite = document.getElementById('quantiteReappro').value;
+    const fournisseur = document.getElementById('fournisseurReappro').value;
+    
+    if (!quantite || !fournisseur) {
+        alert('Veuillez remplir tous les champs obligatoires');
+        return;
+    }
+    
+    alert(`Commande de réapprovisionnement créée!\nQuantité: ${quantite}\nFournisseur: ${fournisseur}`);
+    bootstrap.Modal.getInstance(document.getElementById('reapproModal')).hide();
+}
+
+function enregistrerMouvement() {
+    const code = document.getElementById('codeProduitMvt').value;
+    const type = document.getElementById('typeMouvement').value;
+    const quantite = document.getElementById('quantiteMvt').value;
+    const motif = document.getElementById('motifMvt').value;
+    
+    if (!code || !quantite) {
+        alert('Veuillez remplir tous les champs obligatoires');
+        return;
+    }
+    
+    alert(`Mouvement enregistré!\nProduit: ${code}\nType: ${type}\nQuantité: ${quantite}`);
+    
+    // Réinitialiser le formulaire
+    document.getElementById('mouvementForm').reset();
+}
+</script>
+{% endblock %}

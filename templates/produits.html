@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des Produits - GbGescom{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-box text-primary"></i> 
+            Liste des Produits
+        </h1>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Recherche</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" name="search" value="{{ search }}" 
+                           placeholder="Code produit ou désignation">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Famille</label>
+                <select class="form-select" name="famille">
+                    <option value="">Toutes les familles</option>
+                    {% for famille in familles %}
+                        <option value="{{ famille }}" {% if famille == famille_filter %}selected{% endif %}>
+                            {{ famille }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Filtre sur stock</label>
+                <select class="form-select" name="stock_filter">
+                    <option value="">Tous les produits</option>
+                    <option value="en_stock" {% if stock_filter == 'en_stock' %}selected{% endif %}>
+                        Afficher uniquement les produits en stock
+                    </option>
+                    <option value="rupture" {% if stock_filter == 'rupture' %}selected{% endif %}>
+                        Afficher également les produits dont le stock est nul
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Afficher
+                    </button>
+                    <a href="{{ url_for('liste_produits') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Effacer
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid gap-1">
+                    <a href="{{ url_for('nouveau_produit') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus"></i> Nouveau
+                    </a>
+                    <button type="button" class="btn btn-warning btn-sm" onclick="toggleSelection()">
+                        <i class="fas fa-check-square"></i> Sélection
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmerViderTout()" id="btnViderTout">
+                        <i class="fas fa-trash-alt"></i> Vider Tout
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bulk Actions Form -->
+<form id="bulkForm" method="POST" action="{{ url_for('supprimer_selection_produits') }}" style="display: none;">
+    <div class="alert alert-info">
+        <div class="d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-info-circle"></i> Mode sélection activé - Cochez les produits à supprimer</span>
+            <div>
+                <button type="submit" class="btn btn-danger btn-sm me-2">
+                    <i class="fas fa-trash"></i> Supprimer sélection
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSelection()">
+                    <i class="fas fa-times"></i> Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Products Table -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-sm mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th id="checkboxHeader" style="display: none; width: 40px;">
+                    <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
+                </th>
+                <th style="min-width: 80px;">Code</th>
+                <th style="min-width: 150px;">Désignation</th>
+                <th style="min-width: 100px;">Famille</th>
+                <th style="min-width: 60px;">Unité</th>
+                <th style="min-width: 100px;">Prix total</th>
+                <th style="min-width: 110px;">Boutique</th>
+                <th style="min-width: 110px;">Magasin 1</th>
+                <th style="min-width: 110px;">Magasin 2</th>
+                <th style="min-width: 110px;">Magasin 3</th>
+                <th style="min-width: 80px;">Affiché</th>
+                <th style="min-width: 80px;">Minimal</th>
+                <th style="min-width: 80px;">Revient</th>
+                <th style="min-width: 120px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produit in produits %}
+            <tr {% if produit.stock_affiche <= produit.stock_minimal %}class="table-warning"{% endif %}>
+                <td class="checkbox-cell" style="display: none;">
+                    <input type="checkbox" name="produits_selection" value="{{ produit.id }}" form="bulkForm">
+                </td>
+                <td><strong>{{ produit.code }}</strong></td>
+                <td>{{ produit.designation }}</td>
+                <td>
+                    {% if produit.famille %}
+                        <span class="badge bg-info">{{ produit.famille }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ produit.unite }}</td>
+                <td class="text-end">{{ "%.0f"|format(produit.prix_total) }} XOF</td>
+                <td class="text-end text-danger"><strong>{{ "%.0f"|format(produit.prix_boutique) }} XOF</strong></td>
+                <td class="text-end">{{ "%.0f"|format(produit.prix_magasin1) }} XOF</td>
+                <td class="text-end">{{ "%.0f"|format(produit.prix_magasin2) }} XOF</td>
+                <td class="text-end">{{ "%.0f"|format(produit.prix_magasin3) }} XOF</td>
+                <td class="text-end">
+                    {% if produit.stock_affiche <= produit.stock_minimal %}
+                        <span class="text-danger"><strong>{{ produit.stock_affiche }}</strong></span>
+                    {% else %}
+                        {{ produit.stock_affiche }}
+                    {% endif %}
+                </td>
+                <td class="text-end">{{ produit.stock_minimal }}</td>
+                <td class="text-end">{{ produit.stock_revient }}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('modifier_produit', id=produit.id) }}" 
+                           class="btn btn-outline-primary btn-sm" title="Modifier">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                onclick="confirmerSuppression({{ produit.id }}, '{{ produit.code }}')" 
+                                title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="14" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                    Aucun produit trouvé
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer le produit <strong id="produitNom"></strong> ?</p>
+                <p class="text-danger"><small>Cette action est irréversible.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vider Tout Modal -->
+<div class="modal fade" id="viderToutModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer <strong>TOUS les produits</strong> ?</p>
+                <p class="text-danger"><strong>Cette action est irréversible et supprimera définitivement tous les produits de la base de données.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form method="POST" action="{{ url_for('vider_tous_produits') }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Supprimer Tout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmerSuppression(id, nom) {
+    document.getElementById('produitNom').textContent = nom;
+    document.getElementById('deleteForm').action = '/produit/' + id + '/supprimer';
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function confirmerViderTout() {
+    new bootstrap.Modal(document.getElementById('viderToutModal')).show();
+}
+
+var selectionMode = false;
+
+function toggleSelection() {
+    selectionMode = !selectionMode;
+    
+    var checkboxHeader = document.getElementById('checkboxHeader');
+    var checkboxCells = document.querySelectorAll('.checkbox-cell');
+    var bulkForm = document.getElementById('bulkForm');
+    
+    if (selectionMode) {
+        checkboxHeader.style.display = 'table-cell';
+        checkboxCells.forEach(function(cell) { 
+            cell.style.display = 'table-cell'; 
+        });
+        bulkForm.style.display = 'block';
+    } else {
+        checkboxHeader.style.display = 'none';
+        checkboxCells.forEach(function(cell) { 
+            cell.style.display = 'none'; 
+        });
+        bulkForm.style.display = 'none';
+        // Décocher toutes les cases
+        document.querySelectorAll('input[name="produits_selection"]').forEach(function(cb) { 
+            cb.checked = false; 
+        });
+        document.getElementById('selectAll').checked = false;
+    }
+}
+
+function toggleAllCheckboxes() {
+    var selectAll = document.getElementById('selectAll');
+    var checkboxes = document.querySelectorAll('input[name="produits_selection"]');
+    
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAll.checked;
+    });
+}
+</script>
+{% endblock %}

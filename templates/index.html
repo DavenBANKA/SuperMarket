@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - GbGescom{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-store text-primary"></i> 
+            Tableau de Bord - GbGescom
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-box fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Produits</h5>
+                <p class="card-text">Gérer les produits et l'inventaire</p>
+                <a href="{{ url_for('liste_produits') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> Accéder
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-receipt fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Facturation</h5>
+                <p class="card-text">Créer et gérer les factures</p>
+                <a href="{{ url_for('facturation') }}" class="btn btn-success">
+                    <i class="fas fa-arrow-right"></i> Accéder
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-warehouse fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Stock</h5>
+                <p class="card-text">Suivre les niveaux de stock</p>
+                <a href="{{ url_for('gestion_stock') }}" class="btn btn-warning">
+                    <i class="fas fa-arrow-right"></i> Accéder
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Rapports</h5>
+                <p class="card-text">Statistiques et analyses</p>
+                <a href="{{ url_for('rapports') }}" class="btn btn-info">
+                    <i class="fas fa-arrow-right"></i> Accéder
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Informations Système</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Date de travail:</strong> <span id="dateActuelle"></span></p>
+                <p><strong>Version:</strong> GbGescom v1.0</p>
+                <p><strong>Statut:</strong> <span class="badge bg-success">Opérationnel</span></p>
+                <hr>
+                <h6>Fonctionnalités disponibles:</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Gestion des produits</li>
+                    <li><i class="fas fa-check text-success"></i> Gestion du stock</li>
+                    <li><i class="fas fa-check text-success"></i> Facturation</li>
+                    <li><i class="fas fa-check text-success"></i> Rapports et statistiques</li>
+                    <li><i class="fas fa-check text-success"></i> Recherche et filtres avancés</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exclamation-triangle"></i> Alertes Stock</h5>
+            </div>
+            <div class="card-body">
+                <div id="alertes-stock">
+                    <p class="text-muted">Chargement des alertes...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set current date
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('fr-FR');
+    document.getElementById('dateActuelle').textContent = dateStr;
+});
+
+// Load stock alerts
+fetch('/api/alertes-stock')
+    .then(response => response.json())
+    .then(data => {
+        const container = document.getElementById('alertes-stock');
+        if (data.length === 0) {
+            container.innerHTML = '<p class="text-success"><i class="fas fa-check"></i> Aucune alerte stock</p>';
+        } else {
+            let html = '';
+            data.forEach(produit => {
+                html += `<div class="alert alert-warning alert-sm mb-2">
+                    <small><strong>${produit.code}</strong> - Stock: ${produit.stock_affiche}</small>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+    })
+    .catch(error => {
+        document.getElementById('alertes-stock').innerHTML = '<p class="text-danger">Erreur de chargement</p>';
+    });
+</script>
+{% endblock %}

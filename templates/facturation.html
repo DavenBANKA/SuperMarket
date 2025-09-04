@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Facturation - GbGescom{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-receipt text-success"></i> 
+            Facturation et Ventes
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Nouvelle Facture</h5>
+            </div>
+            <div class="card-body">
+                <form id="factureForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Numéro de facture</label>
+                            <input type="text" class="form-control" id="numeroFacture" value="FACT-001" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" id="dateFacture">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Client</label>
+                        <input type="text" class="form-control" id="nomClient" placeholder="Nom du client">
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6><i class="fas fa-shopping-cart"></i> Articles</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Code produit</label>
+                            <input type="text" class="form-control" id="codeProduit" placeholder="Saisir le code">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Quantité</label>
+                            <input type="number" class="form-control" id="quantite" value="1" min="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Prix unitaire</label>
+                            <input type="number" step="0.01" class="form-control" id="prixUnitaire" readonly>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-primary d-block" onclick="ajouterArticle()">
+                                <i class="fas fa-plus"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="tableArticles">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Désignation</th>
+                                    <th>Quantité</th>
+                                    <th>Prix unitaire</th>
+                                    <th>Total</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Articles ajoutés dynamiquement -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-info">
+                                    <th colspan="4">Total Facture</th>
+                                    <th id="totalFacture">0 XOF</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" class="btn btn-success" onclick="validerFacture()">
+                            <i class="fas fa-check"></i> Valider Facture
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="imprimerFacture()">
+                            <i class="fas fa-print"></i> Imprimer
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="nouvelleFacture()">
+                            <i class="fas fa-file"></i> Nouvelle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-search"></i> Recherche Produit</h5>
+            </div>
+            <div class="card-body">
+                <input type="text" class="form-control mb-3" id="rechercheRapide" 
+                       placeholder="Rechercher un produit..." onkeyup="rechercherProduit()">
+                <div id="resultatsRecherche" class="list-group">
+                    <!-- Résultats de recherche -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Dernières Factures</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between">
+                        <span>FACT-001</span>
+                        <span class="text-muted">Aujourd'hui</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between">
+                        <span>FACT-002</span>
+                        <span class="text-muted">Hier</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let articlesFacture = [];
+let totalFacture = 0;
+let numeroFactureActuel = 1;
+
+// Set current date on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    document.getElementById('dateFacture').value = dateStr;
+});
+
+// Données produits simulées (en réalité, cela viendrait de l'API)
+const produits = [
+    {code: 'AMP01', designation: 'Ampoule E14', prix: 111.00, stock: 500},
+    {code: 'ARR01', designation: 'Arrache cloue FM manche 10', prix: 98.00, stock: 2800},
+    {code: 'BAR01', designation: 'Barette domino 25 A', prix: 181.00, stock: 2500},
+    {code: 'CAB01', designation: 'Cable souple 3 x 1.5', prix: 15.00, stock: 58000},
+    {code: 'TOL01', designation: 'Tole lisse', prix: 2.00, stock: 4800}
+];
+
+function rechercherProduit() {
+    const terme = document.getElementById('rechercheRapide').value.toLowerCase();
+    const resultats = document.getElementById('resultatsRecherche');
+    
+    if (terme.length < 2) {
+        resultats.innerHTML = '';
+        return;
+    }
+    
+    const produitsFiltrés = produits.filter(p => 
+        p.code.toLowerCase().includes(terme) || 
+        p.designation.toLowerCase().includes(terme)
+    );
+    
+    let html = '';
+    produitsFiltrés.forEach(produit => {
+        html += `
+            <div class="list-group-item list-group-item-action" onclick="selectionnerProduit('${produit.code}')">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${produit.code}</h6>
+                    <small>${produit.prix.toFixed(2)} €</small>
+                </div>
+                <p class="mb-1">${produit.designation}</p>
+                <small>Stock: ${produit.stock}</small>
+            </div>
+        `;
+    });
+    
+    resultats.innerHTML = html;
+}
+
+function selectionnerProduit(code) {
+    const produit = produits.find(p => p.code === code);
+    if (produit) {
+        document.getElementById('codeProduit').value = produit.code;
+        document.getElementById('prixUnitaire').value = produit.prix.toFixed(2);
+        document.getElementById('resultatsRecherche').innerHTML = '';
+        document.getElementById('rechercheRapide').value = '';
+    }
+}
+
+// Recherche automatique par code produit
+document.getElementById('codeProduit').addEventListener('input', function() {
+    const code = this.value.toUpperCase();
+    const produit = produits.find(p => p.code === code);
+    if (produit) {
+        document.getElementById('prixUnitaire').value = produit.prix.toFixed(2);
+    } else {
+        document.getElementById('prixUnitaire').value = '';
+    }
+});
+
+function ajouterArticle() {
+    const code = document.getElementById('codeProduit').value;
+    const quantite = parseInt(document.getElementById('quantite').value);
+    const prix = parseFloat(document.getElementById('prixUnitaire').value);
+    
+    if (!code || !quantite || !prix) {
+        alert('Veuillez remplir tous les champs');
+        return;
+    }
+    
+    const produit = produits.find(p => p.code === code);
+    if (!produit) {
+        alert('Produit non trouvé');
+        return;
+    }
+    
+    if (quantite > produit.stock) {
+        alert(`Stock insuffisant. Stock disponible: ${produit.stock}`);
+        return;
+    }
+    
+    const total = quantite * prix;
+    
+    const article = {
+        code: code,
+        designation: produit.designation,
+        quantite: quantite,
+        prix: prix,
+        total: total
+    };
+    
+    articlesFacture.push(article);
+    afficherArticles();
+    
+    // Réinitialiser les champs
+    document.getElementById('codeProduit').value = '';
+    document.getElementById('quantite').value = '1';
+    document.getElementById('prixUnitaire').value = '';
+}
+
+function afficherArticles() {
+    const tbody = document.querySelector('#tableArticles tbody');
+    let html = '';
+    totalFacture = 0;
+    
+    articlesFacture.forEach((article, index) => {
+        html += `
+            <tr>
+                <td>${article.code}</td>
+                <td>${article.designation}</td>
+                <td>${article.quantite}</td>
+                <td>${article.prix.toFixed(0)} XOF</td>
+                <td>${article.total.toFixed(0)} XOF</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="supprimerArticle(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        totalFacture += article.total;
+    });
+    
+    tbody.innerHTML = html;
+    document.getElementById('totalFacture').textContent = totalFacture.toFixed(0) + ' XOF';
+}
+
+function supprimerArticle(index) {
+    articlesFacture.splice(index, 1);
+    afficherArticles();
+}
+
+function validerFacture() {
+    if (articlesFacture.length === 0) {
+        alert('Aucun article dans la facture');
+        return;
+    }
+    
+    const client = document.getElementById('nomClient').value;
+    if (!client) {
+        alert('Veuillez saisir le nom du client');
+        return;
+    }
+    
+    alert(`Facture validée!\nClient: ${client}\nTotal: ${totalFacture.toFixed(0)} XOF`);
+    nouvelleFacture();
+}
+
+function imprimerFacture() {
+    if (articlesFacture.length === 0) {
+        alert('Aucun article à imprimer');
+        return;
+    }
+    
+    // Simulation d'impression
+    window.print();
+}
+
+function nouvelleFacture() {
+    articlesFacture = [];
+    totalFacture = 0;
+    numeroFactureActuel++;
+    
+    document.getElementById('numeroFacture').value = `FACT-${numeroFactureActuel.toString().padStart(3, '0')}`;
+    document.getElementById('nomClient').value = '';
+    document.getElementById('codeProduit').value = '';
+    document.getElementById('quantite').value = '1';
+    document.getElementById('prixUnitaire').value = '';
+    
+    afficherArticles();
+}
+</script>
+{% endblock %}

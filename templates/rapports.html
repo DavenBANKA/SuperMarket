@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Rapports et Statistiques - GbGescom{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-bar text-info"></i> 
+            Rapports et Statistiques
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-box fa-2x text-primary mb-2"></i>
+                <h3 class="text-primary">{{ stats.total_produits }}</h3>
+                <p class="card-text">Total Produits</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                <h3 class="text-danger">{{ stats.produits_rupture }}</h3>
+                <p class="card-text">Produits en Rupture</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-coins fa-2x text-success mb-2"></i>
+                <h3 class="text-success">{{ "%.0f"|format(stats.valeur_stock) }}</h3>
+                <p class="card-text">Valeur Stock (XOF)</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar fa-2x text-info mb-2"></i>
+                <h3 class="text-info" id="dateRapport"></h3>
+                <p class="card-text">Date de Travail</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Répartition par Famille</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartFamilles" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Évolution du Stock</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartStock" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-table"></i> Rapport Détaillé des Stocks</h5>
+                <div>
+                    <button class="btn btn-sm btn-success" onclick="exporterExcel()">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="exporterPDF()">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm" id="tableRapport">
+                        <thead>
+                            <tr>
+                                <th>Famille</th>
+                                <th>Nb Produits</th>
+                                <th>Stock Total</th>
+                                <th>Valeur Stock</th>
+                                <th>Produits en Rupture</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge bg-primary">ELECTRICITE</span></td>
+                                <td>6</td>
+                                <td>71,300</td>
+                                <td>15,420 XOF</td>
+                                <td class="text-danger">2</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-success">MENAGE</span></td>
+                                <td>2</td>
+                                <td>9,800</td>
+                                <td>2,340 XOF</td>
+                                <td class="text-success">0</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-warning">PLOMBERIE</span></td>
+                                <td>2</td>
+                                <td>500</td>
+                                <td>125 XOF</td>
+                                <td class="text-danger">1</td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-info">
+                            <tr>
+                                <th>TOTAL</th>
+                                <th>{{ stats.total_produits }}</th>
+                                <th>81,600</th>
+                                <th>{{ "%.0f"|format(stats.valeur_stock) }} XOF</th>
+                                <th class="text-danger">{{ stats.produits_rupture }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-filter"></i> Filtres de Rapport</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">Période</label>
+                        <select class="form-select">
+                            <option>Aujourd'hui</option>
+                            <option>Cette semaine</option>
+                            <option>Ce mois</option>
+                            <option>Cette année</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Famille</label>
+                        <select class="form-select">
+                            <option value="">Toutes les familles</option>
+                            <option>ELECTRICITE</option>
+                            <option>MENAGE</option>
+                            <option>PLOMBERIE</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Type de rapport</label>
+                        <select class="form-select">
+                            <option>Stock général</option>
+                            <option>Produits en rupture</option>
+                            <option>Mouvements de stock</option>
+                            <option>Analyse des ventes</option>
+                        </select>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary w-100">
+                        <i class="fas fa-sync"></i> Actualiser
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-download"></i> Actions Rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="imprimerRapport()">
+                        <i class="fas fa-print"></i> Imprimer Rapport
+                    </button>
+                    <button class="btn btn-outline-success" onclick="envoyerEmail()">
+                        <i class="fas fa-envelope"></i> Envoyer par Email
+                    </button>
+                    <button class="btn btn-outline-info" onclick="programmerRapport()">
+                        <i class="fas fa-clock"></i> Programmer Envoi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Set current date
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('fr-FR');
+    document.getElementById('dateRapport').textContent = dateStr;
+});
+
+// Graphique en secteurs - Répartition par famille
+const ctxFamilles = document.getElementById('chartFamilles').getContext('2d');
+new Chart(ctxFamilles, {
+    type: 'doughnut',
+    data: {
+        labels: ['ELECTRICITE', 'MENAGE', 'PLOMBERIE'],
+        datasets: [{
+            data: [6, 2, 2],
+            backgroundColor: [
+                '#667eea',
+                '#28a745',
+                '#ffc107'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Graphique linéaire - Évolution du stock
+const ctxStock = document.getElementById('chartStock').getContext('2d');
+new Chart(ctxStock, {
+    type: 'line',
+    data: {
+        labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+        datasets: [{
+            label: 'Valeur Stock',
+            data: [17500, 17800, 17200, 17900, 17885, 17650, 17885],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: false,
+                ticks: {
+                    callback: function(value) {
+                        return '€ ' + value.toLocaleString();
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+function exporterExcel() {
+    alert('Export Excel en cours...');
+    // Ici, vous implémenteriez l'export réel vers Excel
+}
+
+function exporterPDF() {
+    alert('Export PDF en cours...');
+    // Ici, vous implémenteriez l'export réel vers PDF
+}
+
+function imprimerRapport() {
+    window.print();
+}
+
+function envoyerEmail() {
+    alert('Fonctionnalité d\'envoi par email à implémenter');
+}
+
+function programmerRapport() {
+    alert('Fonctionnalité de programmation à implémenter');
+}
+</script>
+{% endblock %}

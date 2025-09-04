@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier Produit - GbGescom{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-edit text-warning"></i> 
+            Modifier Produit - {{ produit.code }}
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-box"></i> Informations du Produit</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Code produit *</label>
+                            <input type="text" class="form-control" name="code" value="{{ produit.code }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Unité</label>
+                            <input type="text" class="form-control" name="unite" value="{{ produit.unite }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Désignation *</label>
+                        <input type="text" class="form-control" name="designation" value="{{ produit.designation }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Famille</label>
+                        <select class="form-select" name="famille">
+                            <option value="">Sélectionner une famille</option>
+                            <option value="ELECTRICITE" {% if produit.famille == 'ELECTRICITE' %}selected{% endif %}>ELECTRICITE</option>
+                            <option value="MENAGE" {% if produit.famille == 'MENAGE' %}selected{% endif %}>MENAGE</option>
+                            <option value="PLOMBERIE" {% if produit.famille == 'PLOMBERIE' %}selected{% endif %}>PLOMBERIE</option>
+                        </select>
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3"><i class="fas fa-euro-sign"></i> Prix</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Prix total</label>
+                            <input type="number" step="0.01" class="form-control" name="prix_total" value="{{ produit.prix_total }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Prix boutique</label>
+                            <input type="number" step="0.01" class="form-control" name="prix_boutique" value="{{ produit.prix_boutique }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Prix Magasin 1</label>
+                            <input type="number" step="0.01" class="form-control" name="prix_magasin1" value="{{ produit.prix_magasin1 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Prix Magasin 2</label>
+                            <input type="number" step="0.01" class="form-control" name="prix_magasin2" value="{{ produit.prix_magasin2 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Prix Magasin 3</label>
+                            <input type="number" step="0.01" class="form-control" name="prix_magasin3" value="{{ produit.prix_magasin3 }}">
+                        </div>
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3"><i class="fas fa-warehouse"></i> Stock</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Stock affiché</label>
+                            <input type="number" class="form-control" name="stock_affiche" value="{{ produit.stock_affiche }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Stock minimal</label>
+                            <input type="number" class="form-control" name="stock_minimal" value="{{ produit.stock_minimal }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Stock revient</label>
+                            <input type="number" class="form-control" name="stock_revient" value="{{ produit.stock_revient }}">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save"></i> Modifier
+                        </button>
+                        <a href="{{ url_for('liste_produits') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Informations</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Date de création:</strong><br>
+                {{ produit.date_creation.strftime('%d/%m/%Y %H:%M') if produit.date_creation else 'N/A' }}</p>
+                
+                <hr>
+                
+                <h6>État du stock:</h6>
+                {% if produit.stock_affiche <= produit.stock_minimal %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Stock faible ou en rupture
+                    </div>
+                {% else %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check"></i>
+                        Stock suffisant
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
